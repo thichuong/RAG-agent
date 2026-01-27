@@ -21,7 +21,8 @@ def load_model():
         llm = Llama(
             model_path=model_path,
             n_ctx=8192,      # Increased context window for RAG
-            n_threads=os.cpu_count() - 1, # Use all available cores minus one
+            n_threads=6,
+            n_threads_batch=6,
             verbose=False
         )
         logger.info("Qwen3 GGUF Model loaded successfully.")

@@ -8,3 +8,4 @@ tavily-python
 gradio
 langchain-text-splitters
 numpy
+python-dotenv

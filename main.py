@@ -1,18 +1,28 @@
 # main.py
+import argparse
 import gradio as gr
 from src.config import DATA_DIR
 from src.rag import InvestmentRAG
 from src.llm import load_model
 from src.agent import QwenAgent
 
-# --- Main Execution & UI ---
+
 def main():
+    # Parse CLI arguments
+    parser = argparse.ArgumentParser(description="Qwen3 Multi-Step Agent + Investment RAG")
+    parser.add_argument(
+        "--rebuild",
+        action="store_true",
+        help="Force rebuild RAG cache, ignoring existing cache"
+    )
+    args = parser.parse_args()
+    
     # 1. Load Model
     llm = load_model()
     
-    # 2. Initialize RAG
+    # 2. Initialize RAG (with optional force rebuild)
     rag = InvestmentRAG(DATA_DIR)
-    rag.initialize(llm=llm)
+    rag.initialize(llm=llm, force_rebuild=args.rebuild)
     
     # 3. Initialize Agent
     agent = QwenAgent(llm, rag)
@@ -33,6 +43,7 @@ def main():
     )
     
     demo.launch(server_name="0.0.0.0", share=True)
+
 
 if __name__ == "__main__":
     main()

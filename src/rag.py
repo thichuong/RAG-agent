@@ -1,13 +1,17 @@
 # src/rag.py
 import os
 import glob
+import json
+import pickle
+import hashlib
 import logging
 import numpy as np
 import faiss
 from rank_bm25 import BM25Okapi
 from sentence_transformers import SentenceTransformer, CrossEncoder
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from .config import logger
+from .config import logger, CACHE_DIR
+
 
 class InvestmentRAG:
     def __init__(self, data_dir: str):
@@ -19,6 +23,104 @@ class InvestmentRAG:
         self.embed_model = None
         self.reranker = None
         self.is_ready = False
+        self._cache_dir = CACHE_DIR
+
+    def _compute_data_hash(self) -> str:
+        """Compute hash of all txt files in data directory to detect changes."""
+        hash_md5 = hashlib.md5()
+        files = sorted(glob.glob(os.path.join(self.data_dir, "*.txt")))
+        
+        for file_path in files:
+            # Include filename and modification time in hash
+            hash_md5.update(file_path.encode())
+            hash_md5.update(str(os.path.getmtime(file_path)).encode())
+            
+            # Also include file content hash for extra safety
+            with open(file_path, "rb") as f:
+                for chunk in iter(lambda: f.read(4096), b""):
+                    hash_md5.update(chunk)
+        
+        return hash_md5.hexdigest()
+
+    def _get_cache_paths(self):
+        """Return paths for all cache files."""
+        return {
+            "meta": os.path.join(self._cache_dir, "cache_meta.json"),
+            "faiss": os.path.join(self._cache_dir, "index.faiss"),
+            "embeddings": os.path.join(self._cache_dir, "embeddings.npy"),
+            "chunks": os.path.join(self._cache_dir, "chunks.pkl"),
+            "bm25": os.path.join(self._cache_dir, "bm25.pkl"),
+        }
+
+    def _is_cache_valid(self) -> bool:
+        """Check if cache exists and is valid (data hasn't changed)."""
+        paths = self._get_cache_paths()
+        
+        # Check if all cache files exist
+        for path in paths.values():
+            if not os.path.exists(path):
+                return False
+        
+        # Check if data hash matches
+        try:
+            with open(paths["meta"], "r") as f:
+                meta = json.load(f)
+            current_hash = self._compute_data_hash()
+            return meta.get("data_hash") == current_hash
+        except Exception:
+            return False
+
+    def _save_cache(self, embeddings: np.ndarray, tokenized_corpus: list):
+        """Save all RAG components to cache files."""
+        os.makedirs(self._cache_dir, exist_ok=True)
+        paths = self._get_cache_paths()
+        
+        # Save metadata with data hash
+        meta = {
+            "data_hash": self._compute_data_hash(),
+            "num_chunks": len(self.chunks),
+        }
+        with open(paths["meta"], "w") as f:
+            json.dump(meta, f)
+        
+        # Save FAISS index
+        faiss.write_index(self.index, paths["faiss"])
+        
+        # Save embeddings
+        np.save(paths["embeddings"], embeddings)
+        
+        # Save chunks metadata
+        with open(paths["chunks"], "wb") as f:
+            pickle.dump(self.chunks, f)
+        
+        # Save BM25 tokenized corpus (for rebuilding BM25)
+        with open(paths["bm25"], "wb") as f:
+            pickle.dump(tokenized_corpus, f)
+        
+        logger.info(f"Cache saved to {self._cache_dir}")
+
+    def _load_cache(self) -> bool:
+        """Load RAG components from cache. Returns True if successful."""
+        try:
+            paths = self._get_cache_paths()
+            
+            # Load chunks
+            with open(paths["chunks"], "rb") as f:
+                self.chunks = pickle.load(f)
+            
+            # Load FAISS index
+            self.index = faiss.read_index(paths["faiss"])
+            
+            # Load BM25 tokenized corpus and rebuild BM25
+            with open(paths["bm25"], "rb") as f:
+                tokenized_corpus = pickle.load(f)
+            self.bm25 = BM25Okapi(tokenized_corpus)
+            
+            logger.info(f"Cache loaded: {len(self.chunks)} chunks")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to load cache: {e}")
+            return False
 
     def _generate_summary(self, llm, text):
         """Generate a brief summary of the document using the LLM."""
@@ -47,19 +149,43 @@ Answer format:
                 summary = content.split("</think>")[-1].strip()
             else:
                 summary = content.strip()
-            return summary.replace("\n", " ") # Keep it on one line ideally
+            return summary.replace("\n", " ")  # Keep it on one line ideally
         except Exception as e:
             logger.error(f"Error generating summary: {e}")
             return ""
 
-    def initialize(self, llm=None):
+    def initialize(self, llm=None, force_rebuild: bool = False):
         """Load data, chunk, and build hybrid index.
         
         Args:
             llm: Optional LLM instance for generating contextual summaries.
+            force_rebuild: If True, ignore cache and rebuild from scratch.
         """
         logger.info("Initializing RAG Knowledge Base...")
         
+        # Load models first (always needed for search)
+        logger.info("Loading Embedding Model & Re-ranker...")
+        self.embed_model = SentenceTransformer("BAAI/bge-base-en-v1.5", device="cpu")
+        self.reranker = CrossEncoder("BAAI/bge-reranker-base", device="cpu")
+        
+        # Check cache validity
+        if not force_rebuild and self._is_cache_valid():
+            logger.info("Loading RAG from cache...")
+            if self._load_cache():
+                self.is_ready = True
+                logger.info(f"RAG System Ready (from cache). {len(self.chunks)} chunks loaded.")
+                return
+            logger.warning("Cache loading failed, rebuilding...")
+        elif force_rebuild:
+            logger.info("Force rebuilding RAG cache...")
+        else:
+            logger.info("Cache not found or invalid, building from scratch...")
+        
+        # Build from scratch
+        self._build_index(llm)
+
+    def _build_index(self, llm=None):
+        """Build RAG index from scratch and save to cache."""
         # 1. Load Data
         if not os.path.exists(self.data_dir):
             os.makedirs(self.data_dir, exist_ok=True)
@@ -120,11 +246,6 @@ Answer format:
             return
 
         # 3. Embeddings & FAISS
-        logger.info("Loading Embedding Model & Re-ranker...")
-        # Updated to use BGE-Base and CrossEncoder as per recent changes
-        self.embed_model = SentenceTransformer("BAAI/bge-base-en-v1.5", device="cpu")
-        self.reranker = CrossEncoder("BAAI/bge-reranker-base", device="cpu")
-        
         logger.info("Encoding chunks...")
         # Use contextualized content for embeddings/search if available
         texts_to_embed = [c.get("contextualized_content", c["content"]) for c in self.chunks]
@@ -138,6 +259,9 @@ Answer format:
         # Also use contextualized content for BM25
         tokenized_corpus = [c.get("contextualized_content", c["content"]).lower().split() for c in self.chunks]
         self.bm25 = BM25Okapi(tokenized_corpus)
+        
+        # 5. Save cache
+        self._save_cache(embeddings, tokenized_corpus)
         
         self.is_ready = True
         logger.info(f"RAG System Ready. Indexed {len(self.chunks)} chunks.")
