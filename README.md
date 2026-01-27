@@ -1,44 +1,51 @@
-# RAG Investment Agent: Hybrid Search + Thinking Model
+# AI Agents Collection: RAG & Multi-Step Reasoning
 
-Advanced RAG (Retrieval-Augmented Generation) system optimized for financial investment data. This project leverages the **LiquidAI/LFM2.5-1.2B-Thinking** model to provide reasoned, context-aware answers.
+This repository contains advanced AI agents designed for financial analysis, investment insights, and complex multi-step reasoning.
 
-## 🚀 Environment & Hardware
-- **Platform**: Google Colab (Recommended)
-- **Hardware**: **Tesla T4 GPU** (16GB VRAM)
-- **Frameworks**: Transformers, PyTorch, FAISS, BM25, Gradio.
+## 🤖 1. Multi-Step Financial Agent (Qwen3 Edition)
+**File**: `multi_step_agent_qwen.ipynb`
+**Model**: `Qwen/Qwen3-4B-Instruct-2507`
 
-## 🧠 Key Technologies
-- **Model**: `LiquidAI/LFM2.5-1.2B-Thinking` - A state-of-the-art 1.2B parameter model tuned for "System 2 Thinking" and logical reasoning using `<think>` tags.
-- **Hybrid Search**: Combines **Dense Retrieval** (FAISS + BGE Embeddings) with **Sparse Retrieval** (BM25) for high-precision document matching.
-- **Optimized Contextual Retrieval**:
-    - **Document Summary Prepending**: Each document is summarized once by the LLM.
-    - **Metadata Enrichment**: Filenames and broad summaries are prepended to every chunk.
-    - **Performance**: 10x-20x faster indexing compared to traditional per-chunk contextualization.
+A powerful agent capable of executing multi-step workflows, using external tools, and maintaining conversation context.
 
-## 🛠️ Setup Instructions
+### ✨ Key Features
+- **Advanced Tool Use**:
+  - `get_price(symbol)`: Fetches real-time stock and crypto prices using `yfinance`.
+  - `get_news(query)`: Searches for the latest news using `Tavily`.
+  - `arithmetic_tool(op, a, b)`: Performs precise mathematical calculations.
+- **Contextual Memory**: capable of handling follow-up questions (e.g., "What is BTC price?" -> "Multiply it by 2").
+- **Interactive UI**: Built with **Gradio**, supporting a full chat interface with history.
 
-### 1. Requirements
-Ensure you have a Hugging Face token with access to the LiquidAI models.
-
-### 2. Google Colab Deployment
-1. Upload `rag_investment.ipynb` to Google Colab.
-2. Select **Runtime > Change runtime type > T4 GPU**.
-3. (Optional) Mount your Google Drive to load data from a specific folder.
-4. Add your `HF_TOKEN` to Colab Secrets (the key icon 🔑).
-
-### 3. Data Preparation
-Place your `.txt` files in a folder named `data investment` or specify a Google Drive path in the configuration cell.
-
-## 🖥️ Usage
-Run all cells in the notebook. A **Gradio UI** will be generated, providing a public URL to interact with your Investment Agent.
-
-- **Ask about**: Value-at-Risk (VaR), Expected Shortfall, Portfolio Management, Currency Risk, etc.
-- **Thinking Process**: The model will display its internal logic inside `<think>` tags before providing the final professional answer.
-
-## 📂 Project Structure
-- `rag_investment.ipynb`: Main application logic.
-- `data investment/`: Directory for source documents.
-- `README.md`: Project documentation.
+### 🚀 Quick Start
+1. Open `multi_step_agent_qwen.ipynb` in Google Colab (T4 GPU recommended).
+2. Add your API keys to Colab Secrets:
+   - `HF_TOKEN`: Hugging Face Token (with access to Qwen3).
+   - `TAVILY_API_KEY`: Tavily Search API Key.
+3. Run all cells. The notebook will install the latest `transformers` (required for Qwen3) and launch the UI.
 
 ---
-*Created with ❤️ for Advanced Investment Analysis.*
+
+## 🧠 2. RAG Investment Agent
+**File**: `rag_investment.ipynb`
+**Model**: `LiquidAI/LFM2.5-1.2B-Thinking`
+
+A Retrieval-Augmented Generation system optimized for querying and analyzing investment documents.
+
+### ✨ Key Features
+- **Thinking Model**: Uses specific `<think>` tags to demonstrate reasoning before answering.
+- **Hybrid Search**: FAISS (Dense) + BM25 (Sparse) for precise document retrieval.
+- **Optimized Indexing**: Uses document summaries and metadata enrichment for better retrieval accuracy.
+
+### 🚀 Quick Start
+1. Open `rag_investment.ipynb` in Google Colab.
+2. Place your investment documents (`.txt`) in the `data investment/` folder or link Google Drive.
+3. Run the notebook to index data and start the Gradio chat interface.
+
+---
+
+## 🛠️ Requirements
+- **Hardware**: T4 GPU (Google Colab Standard)
+- **Libraries**: `transformers`, `accelerate`, `yfinance`, `tavily-python`, `gradio`, `faiss-cpu`, `rank_bm25`.
+
+---
+*Created for Advanced Agentic Coding experiments.*
