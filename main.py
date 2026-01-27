@@ -7,12 +7,12 @@ from src.agent import QwenAgent
 
 # --- Main Execution & UI ---
 def main():
-    # 1. Initialize RAG
-    rag = InvestmentRAG(DATA_DIR)
-    rag.initialize()
-    
-    # 2. Load Model
+    # 1. Load Model
     llm = load_model()
+    
+    # 2. Initialize RAG
+    rag = InvestmentRAG(DATA_DIR)
+    rag.initialize(llm=llm)
     
     # 3. Initialize Agent
     agent = QwenAgent(llm, rag)

@@ -20,8 +20,44 @@ class InvestmentRAG:
         self.reranker = None
         self.is_ready = False
 
-    def initialize(self):
-        """Load data, chunk, and build hybrid index."""
+    def _generate_summary(self, llm, text):
+        """Generate a brief summary of the document using the LLM."""
+        prompt = f"""<document>
+{text}
+</document>
+
+You are an expert at financial document analysis. Please provide a brief, high-level summary (1-2 sentences) of the overall context and main topic of this document.
+This summary will be used to help a search engine understand the broad context for small chunks of this document.
+
+Answer format:
+<think>
+[Your reasoning here]
+</think>
+[Broad context summary here]
+"""
+        try:
+            # Assuming llm is a Llama object from llama_cpp or similar interface
+            response = llm.create_chat_completion(
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=256,
+                temperature=0.1
+            )
+            content = response["choices"][0]["message"]["content"]
+            if "</think>" in content:
+                summary = content.split("</think>")[-1].strip()
+            else:
+                summary = content.strip()
+            return summary.replace("\n", " ") # Keep it on one line ideally
+        except Exception as e:
+            logger.error(f"Error generating summary: {e}")
+            return ""
+
+    def initialize(self, llm=None):
+        """Load data, chunk, and build hybrid index.
+        
+        Args:
+            llm: Optional LLM instance for generating contextual summaries.
+        """
         logger.info("Initializing RAG Knowledge Base...")
         
         # 1. Load Data
@@ -37,10 +73,21 @@ class InvestmentRAG:
             logger.warning("No .txt files found in data directory.")
             return
 
+        doc_summaries = {}
+        if llm:
+            logger.info("Generating document summaries for Contextual Retrieval...")
+
         for file_path in files:
             try:
                 with open(file_path, "r", encoding="utf-8") as f:
-                    self.documents.append({"filename": os.path.basename(file_path), "content": f.read()})
+                    content = f.read()
+                    filename = os.path.basename(file_path)
+                    self.documents.append({"filename": filename, "content": content})
+                    
+                    if llm:
+                        logger.info(f"Summarizing {filename}...")
+                        summary = self._generate_summary(llm, content)
+                        doc_summaries[filename] = summary
             except Exception as e:
                 logger.error(f"Error reading {file_path}: {e}")
 
@@ -48,12 +95,25 @@ class InvestmentRAG:
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
         for doc in self.documents:
             splits = text_splitter.split_text(doc["content"])
+            filename = doc["filename"]
+            summary = doc_summaries.get(filename, "")
+            
             for i, text in enumerate(splits):
-                self.chunks.append({
-                    "id": f"{doc['filename']}_{i}",
+                chunk_data = {
+                    "id": f"{filename}_{i}",
                     "content": text,
-                    "filename": doc["filename"]
-                })
+                    "filename": filename
+                }
+                
+                # Contextual Retrieval Logic
+                if summary:
+                    # Combine Method A (Metadata) and Method B (Summary)
+                    prefix = f"[File: {filename}] [Context: {summary}]"
+                    chunk_data["contextualized_content"] = f"{prefix}\n{text}"
+                else:
+                    chunk_data["contextualized_content"] = text
+                    
+                self.chunks.append(chunk_data)
         
         if not self.chunks:
             logger.warning("No text chunks created.")
@@ -66,14 +126,17 @@ class InvestmentRAG:
         self.reranker = CrossEncoder("BAAI/bge-reranker-base", device="cpu")
         
         logger.info("Encoding chunks...")
-        embeddings = self.embed_model.encode([c["content"] for c in self.chunks], show_progress_bar=True)
+        # Use contextualized content for embeddings/search if available
+        texts_to_embed = [c.get("contextualized_content", c["content"]) for c in self.chunks]
+        embeddings = self.embed_model.encode(texts_to_embed, show_progress_bar=True)
         
         dimension = embeddings.shape[1]
         self.index = faiss.IndexFlatL2(dimension)
         self.index.add(np.array(embeddings).astype('float32'))
         
         # 4. BM25
-        tokenized_corpus = [c["content"].lower().split() for c in self.chunks]
+        # Also use contextualized content for BM25
+        tokenized_corpus = [c.get("contextualized_content", c["content"]).lower().split() for c in self.chunks]
         self.bm25 = BM25Okapi(tokenized_corpus)
         
         self.is_ready = True
