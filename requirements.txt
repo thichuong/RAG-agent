@@ -1,0 +1,10 @@
+huggingface_hub
+llama-cpp-python
+faiss-cpu
+rank_bm25
+sentence-transformers
+yfinance
+tavily-python
+gradio
+langchain-text-splitters
+numpy
