@@ -1,5 +1,6 @@
 # src/tools.py
 import re
+from bs4 import BeautifulSoup
 import yfinance as yf
 import json
 import os
@@ -91,7 +92,74 @@ def get_news(query):
     except Exception as e:
         return f"Error: {e}"
 
-# Tool Definitions for System Prompt
+    except Exception as e:
+        return f"Error: {e}"
+
+def crawl_url(url):
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Remove script and style elements
+        for script in soup(["script", "style", "nav", "footer", "header"]):
+            script.decompose()
+            
+        # Get text
+        text = soup.get_text()
+        
+        # Break into lines and remove leading and trailing space on each
+        lines = (line.strip() for line in text.splitlines())
+        # Break multi-headlines into a line each
+        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+        # Drop blank lines
+        text = '\n'.join(chunk for chunk in chunks if chunk)
+        
+        # Truncate to avoid context window explosion (simulated 2000 chars)
+        return text[:2000] + "..." if len(text) > 2000 else text
+    except Exception as e:
+        return f"Error crawling {url}: {e}"
+
+def scrape_web_page(url, selector=None):
+    """
+    Scrape specific elements from a web page using CSS selectors.
+    If selector is None, returns the title and meta description.
+    """
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Remove script and style elements
+        for script in soup(["script", "style", "nav", "footer", "header"]):
+            script.decompose()
+
+        if not selector:
+            # Default: Get Title and Description
+            title = soup.title.string if soup.title else "No Title"
+            meta_desc = soup.find('meta', attrs={'name': 'description'})
+            desc = meta_desc['content'] if meta_desc and 'content' in meta_desc.attrs else "No Description"
+            return f"Title: {title}\nDescription: {desc}"
+        
+        # Scrape specific selector
+        elements = soup.select(selector)
+        if not elements:
+            return f"No elements found for selector: {selector}"
+        
+        results = []
+        for i, el in enumerate(elements[:5]): # Limit to 5 results
+            text = el.get_text(" ", strip=True)
+            results.append(f"Match {i+1}: {text[:500]}") # Truncate each match
+            
+        return "\n".join(results)
+
+    except Exception as e:
+        return f"Error scraping {url}: {e}"
+
 TOOLS_SCHEMA = [
     {
         "type": "function",
@@ -142,6 +210,33 @@ TOOLS_SCHEMA = [
                 "type": "object",
                 "properties": {"query": {"type": "string"}},
                 "required": ["query"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "crawl_url",
+            "description": "Crawl a specific URL to get its full text content. Use this after get_news returns links.",
+            "parameters": {
+                "type": "object",
+                "properties": {"url": {"type": "string"}},
+                "required": ["url"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "scrape_web_page",
+            "description": "Scrape data from a URL using a CSS selector (e.g., 'div.content' or 'table.prices'). Defaults to Title/Description if selector is empty.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {"type": "string"},
+                    "selector": {"type": "string", "description": "CSS Selector to target elements."}
+                },
+                "required": ["url"]
             }
         }
     },

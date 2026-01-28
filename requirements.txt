@@ -9,3 +9,5 @@ gradio
 langchain-text-splitters
 numpy
 python-dotenv
+beautifulsoup4
+requests

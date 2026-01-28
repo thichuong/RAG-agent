@@ -36,3 +36,6 @@ except ImportError:
     DEVICE_NAME = "CPU (torch not installed)"
 
 logger.info(f"Using Device: {DEVICE} ({DEVICE_NAME})")
+
+# Explicitly set RAG to run on CPU as requested
+RAG_DEVICE = "cpu"

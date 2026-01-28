@@ -9,7 +9,7 @@ else:
     # Create a dummy class for runtime checks if needed, or just set to Any
     Llama = object
 from .rag import InvestmentRAG # For type hinting
-from .tools import arithmetic_tool, get_stock_price, get_news, get_crypto_price, TOOLS_SCHEMA
+from .tools import arithmetic_tool, get_stock_price, get_news, get_crypto_price, crawl_url, scrape_web_page, TOOLS_SCHEMA
 from .config import logger
 
 class QwenAgent:
@@ -17,12 +17,24 @@ class QwenAgent:
         self.llm = llm
         self.rag = rag
         self.tool_map = {
-            "arithmetic_tool": arithmetic_tool,
             "get_stock_price": get_stock_price,
             "get_crypto_price": get_crypto_price,
             "get_news": get_news,
+            "crawl_url": crawl_url,
+            "scrape_web_page": scrape_web_page,
             "query_knowledge_base": self.rag.search
         }
+
+    def execute_tool(self, func_name, args):
+        """Helper to execute a tool and format the result."""
+        if func_name in self.tool_map:
+            try:
+                result = self.tool_map[func_name](**args)
+                return result
+            except Exception as e:
+                return f"Error executing {func_name}: {e}"
+        else:
+            return f"Error: Tool {func_name} not found."
 
     def parse_tool_calls(self, text):
         """
@@ -141,7 +153,8 @@ Available Tools:
 {tools_json}
 
 For logical questions, break them down.
-For investment questions, ALWAYS search the knowledge base first using <tool_call>{{"name": "query_knowledge_base", "arguments": {{"query": "your question"}} }}</tool_call>."""
+For investment questions, ALWAYS search the knowledge base first using <tool_call>{{"name": "query_knowledge_base", "arguments": {{"query": "your question"}} }}</tool_call>.
+If you use 'get_news' and it returns links, you MUST use 'crawl_url' to read the content of the most relevant link before answering. using <tool_call>{{"name": "crawl_url", "arguments": {{"url": "the_url"}} }}</tool_call>."""
 
         messages = [
             {"role": "system", "content": system_content}
@@ -199,10 +212,7 @@ For investment questions, ALWAYS search the knowledge base first using <tool_cal
                 steps_log.append(f"🛠️ **Tool Call**: `{func_name}` | Args: `{args}`")
                 
                 if func_name in self.tool_map:
-                    try:
-                        result = self.tool_map[func_name](**args)
-                    except Exception as e:
-                        result = f"Error executing {func_name}: {e}"
+                     result = self.execute_tool(func_name, args)
                 else:
                     result = f"Error: Tool {func_name} not found."
                 
