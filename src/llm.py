@@ -24,8 +24,8 @@ def load_model():
         llm = Llama(
             model_path=model_path,
             n_ctx=8192,      # Increased context window for RAG
-            n_threads=6,
-            n_threads_batch=6,
+            # n_threads=6,
+            # n_threads_batch=6,
             n_gpu_layers=-1,      # QUAN TRỌNG NHẤT: -1 nghĩa là đẩy HẾT model lên GPU
             n_batch=512,          # Tăng khả năng xử lý song song
             verbose=True,
