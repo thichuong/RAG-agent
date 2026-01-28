@@ -145,16 +145,16 @@ TOOLS_SCHEMA = [
             }
         }
     },
-    {
-        "type": "function",
-        "function": {
-            "name": "query_knowledge_base",
-            "description": "Search the internal investment knowledge base (RAG) for information about finance concepts, risk management, or portfolio theory.",
-            "parameters": {
-                "type": "object",
-                "properties": {"query": {"type": "string", "description": "The specific question to search for."}},
-                "required": ["query"]
-            }
-        }
-    }
+    # {
+    #     "type": "function",
+    #     "function": {
+    #         "name": "query_knowledge_base",
+    #         "description": "Search the internal investment knowledge base (RAG) for information about finance concepts, risk management, or portfolio theory.",
+    #         "parameters": {
+    #             "type": "object",
+    #             "properties": {"query": {"type": "string", "description": "The specific question to search for."}},
+    #             "required": ["query"]
+    #         }
+    #     }
+    # }
 ]
