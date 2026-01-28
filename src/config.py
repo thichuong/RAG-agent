@@ -8,7 +8,7 @@ load_dotenv()
 
 # --- Configuration ---
 MODEL_REPO = "unsloth/Qwen3-4B-Instruct-2507-GGUF"
-MODEL_FILENAME = "Qwen3-4B-Instruct-2507-UD-Q8_K_XL.gguf"
+MODEL_FILENAME = "Qwen3-4B-Instruct-2507-Q8_0.gguf"
 DATA_DIR = "./data_investment"  # Directory containing .txt files for RAG
 CACHE_DIR = "./.rag_cache"  # Directory to store RAG cache files
 HF_TOKEN = os.getenv("HF_TOKEN")

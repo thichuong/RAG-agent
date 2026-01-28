@@ -23,7 +23,7 @@ def load_model():
         # Initialize Llama (n_ctx=8192 for RAG context)
         llm = Llama(
             model_path=model_path,
-            n_ctx=8192,      # Increased context window for RAG
+            n_ctx=16384,      # Increased context window for RAG
             # n_threads=6,
             # n_threads_batch=6,
             n_gpu_layers=-1,      # QUAN TRỌNG NHẤT: -1 nghĩa là đẩy HẾT model lên GPU
