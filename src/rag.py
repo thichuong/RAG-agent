@@ -9,7 +9,7 @@ import numpy as np
 import faiss
 from sentence_transformers import SentenceTransformer, CrossEncoder
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from .config import logger, CACHE_DIR
+from .config import logger, CACHE_DIR, DEVICE, DEVICE_NAME
 
 
 class InvestmentRAG:
@@ -181,9 +181,9 @@ Answer format:
         logger.info("Initializing RAG Knowledge Base (Summary Vector Strategy)...")
         
         # Load models first (always needed for search)
-        logger.info("Loading Embedding Model & Re-ranker...")
-        self.embed_model = SentenceTransformer("BAAI/bge-base-en-v1.5", device="cpu")
-        self.reranker = CrossEncoder("BAAI/bge-reranker-base", device="cpu")
+        logger.info(f"Loading Embedding Model & Re-ranker (device={DEVICE}, name={DEVICE_NAME})...")
+        self.embed_model = SentenceTransformer("BAAI/bge-base-en-v1.5", device=DEVICE)
+        self.reranker = CrossEncoder("BAAI/bge-reranker-base", device=DEVICE)
         
         # Check cache validity
         if not force_rebuild and self._is_cache_valid():

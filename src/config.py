@@ -8,7 +8,7 @@ load_dotenv()
 
 # --- Configuration ---
 MODEL_REPO = "unsloth/Qwen3-4B-Instruct-2507-GGUF"
-MODEL_FILENAME = "Qwen3-4B-Instruct-2507-Q6_K.gguf"
+MODEL_FILENAME = "Qwen3-4B-Instruct-2507-UD-Q8_K_XL.gguf"
 DATA_DIR = "./data_investment"  # Directory containing .txt files for RAG
 CACHE_DIR = "./.rag_cache"  # Directory to store RAG cache files
 HF_TOKEN = os.getenv("HF_TOKEN")
@@ -21,3 +21,18 @@ def setup_logging():
     return logger
 
 logger = setup_logging()
+
+# --- Device Configuration ---
+try:
+    import torch
+    if torch.cuda.is_available():
+        DEVICE = "cuda"
+        DEVICE_NAME = torch.cuda.get_device_name(0)
+    else:
+        DEVICE = "cpu"
+        DEVICE_NAME = "CPU"
+except ImportError:
+    DEVICE = "cpu"
+    DEVICE_NAME = "CPU (torch not installed)"
+
+logger.info(f"Using Device: {DEVICE} ({DEVICE_NAME})")

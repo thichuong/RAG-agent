@@ -3,7 +3,7 @@ import sys
 import os
 from huggingface_hub import hf_hub_download
 from llama_cpp import Llama
-from .config import MODEL_REPO, MODEL_FILENAME, HF_TOKEN, logger
+from .config import MODEL_REPO, MODEL_FILENAME, HF_TOKEN, logger, DEVICE, DEVICE_NAME
 
 # --- 1. Model Loading (CPU / GGUF) ---
 def load_model():
@@ -17,13 +17,18 @@ def load_model():
         )
         logger.info(f"Model downloaded to: {model_path}")
         
+        n_gpu_layers = -1 if DEVICE == "cuda" else 0
+        logger.info(f"Loading model with device: {DEVICE} ({DEVICE_NAME}) (n_gpu_layers={n_gpu_layers})")
+
         # Initialize Llama (n_ctx=8192 for RAG context)
         llm = Llama(
             model_path=model_path,
             n_ctx=8192,      # Increased context window for RAG
             n_threads=6,
             n_threads_batch=6,
-            verbose=False
+            n_gpu_layers=-1,      # QUAN TRỌNG NHẤT: -1 nghĩa là đẩy HẾT model lên GPU
+            n_batch=512,          # Tăng khả năng xử lý song song
+            verbose=True,
         )
         logger.info("Qwen3 GGUF Model loaded successfully.")
         return llm
