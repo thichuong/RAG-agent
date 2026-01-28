@@ -1,6 +1,8 @@
 # src/tools.py
 import re
 import yfinance as yf
+import json
+import os
 from tavily import TavilyClient
 from .config import TAVILY_API_KEY
 
@@ -8,12 +10,20 @@ def resolve_symbol(symbol):
     if not symbol: return None
     symbol = symbol.strip().upper()
     # Basic mappings
-    MAPPING = {
-        "BITCOIN": "BTC-USD", "BTC": "BTC-USD",
-        "ETHEREUM": "ETH-USD", "ETH": "ETH-USD",
-        "NVIDIA": "NVDA", "GOOGLE": "GOOGL", "APPLE": "AAPL",
-        "AMAZON": "AMZN", "MICROSOFT": "MSFT", "TESLA": "TSLA"
-    }
+    # Load mapping from JSON (memoized or loaded at module level preferred, but here valid too)
+    try:
+        mapping_path = os.path.join(os.path.dirname(__file__), 'mapping_data.json')
+        with open(mapping_path, 'r') as f:
+            MAPPING = json.load(f)
+    except Exception as e:
+        print(f"Warning: Could not load mapping_data.json: {e}")
+        # Fallback to minimal if file missing
+        MAPPING = {
+            "BITCOIN": "BTC-USD", "BTC": "BTC-USD",
+            "ETHEREUM": "ETH-USD", "ETH": "ETH-USD",
+            "NVIDIA": "NVDA", "GOOGLE": "GOOGL", "APPLE": "AAPL",
+            "AMAZON": "AMZN", "MICROSOFT": "MSFT", "TESLA": "TSLA"
+        }
     # Check mapping
     if symbol in MAPPING: return MAPPING[symbol]
     for k, v in MAPPING.items():

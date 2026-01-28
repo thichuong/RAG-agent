@@ -6,6 +6,7 @@ from src.config import DATA_DIR, logger
 from src.rag import InvestmentRAG
 from src.llm import load_model
 from src.agent import QwenAgent
+from src.setup_mapping import download_and_process_mappings
 
 
 # Global references (initialized in main)
@@ -92,6 +93,10 @@ def main():
     )
     args = parser.parse_args()
     
+    # 0. Setup/Update Mappings
+    print("🔄 Ensuring ticker mappings are up-to-date...")
+    download_and_process_mappings()
+
     # 1. Load Model
     llm_instance = load_model()
     
