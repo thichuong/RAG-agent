@@ -3,6 +3,7 @@ import re
 import yfinance as yf
 import json
 import os
+import requests
 from tavily import TavilyClient
 from .config import TAVILY_API_KEY
 
@@ -60,6 +61,24 @@ def get_stock_price(symbol):
     except Exception as e:
         return f"Error fetching price for {symbol}: {e}"
 
+def get_crypto_price(symbol):
+    symbol = symbol.strip().upper()
+    # Map common names to Binance symbols if needed, or assume format like "BTCUSDT"
+    # Basic mapping: "BTC" -> "BTCUSDT", "ETH" -> "ETHUSDT"
+    if not symbol.endswith("USDT") and not symbol.endswith("BUSD"):
+        # If it's just "BTC", append "USDT"
+        symbol += "USDT"
+    
+    url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
+    try:
+        response = requests.get(url)
+        data = response.json()
+        if "price" in data:
+            return float(data["price"])
+        return f"Error: {data.get('msg', 'Unknown error')}"
+    except Exception as e:
+        return f"Error fetching crypto price for {symbol}: {e}"
+
 def get_news(query):
     if not TAVILY_API_KEY:
         return "Error: TAVILY_API_KEY not configured."
@@ -94,7 +113,19 @@ TOOLS_SCHEMA = [
         "type": "function",
         "function": {
             "name": "get_stock_price",
-            "description": "Get current stock/crypto price.",
+            "description": "Get current stock price (e.g., AAPL, TSLA). Do NOT use for crypto.",
+            "parameters": {
+                "type": "object",
+                "properties": {"symbol": {"type": "string"}},
+                "required": ["symbol"]
+            }
+        }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "get_crypto_price",
+            "description": "Get current crypto price (e.g., BTC, ETH, SOL) using Binance API.",
             "parameters": {
                 "type": "object",
                 "properties": {"symbol": {"type": "string"}},

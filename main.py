@@ -1,6 +1,14 @@
 # main.py
 import argparse
 import os
+import sys
+
+# Ensure we are running in a virtual environment
+if sys.prefix == sys.base_prefix:
+    print("❌ Error: You must run this application within the .venv environment.")
+    print("👉 Please run: source .venv/bin/activate")
+    sys.exit(1)
+
 import gradio as gr
 from src.config import DATA_DIR, logger
 from src.rag import InvestmentRAG

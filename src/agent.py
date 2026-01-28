@@ -4,7 +4,7 @@ import re
 from typing import List, Dict
 from llama_cpp import Llama  # For type hinting
 from .rag import InvestmentRAG # For type hinting
-from .tools import arithmetic_tool, get_stock_price, get_news, TOOLS_SCHEMA
+from .tools import arithmetic_tool, get_stock_price, get_news, get_crypto_price, TOOLS_SCHEMA
 from .config import logger
 
 class QwenAgent:
@@ -14,6 +14,7 @@ class QwenAgent:
         self.tool_map = {
             "arithmetic_tool": arithmetic_tool,
             "get_stock_price": get_stock_price,
+            "get_crypto_price": get_crypto_price,
             "get_news": get_news,
             "query_knowledge_base": self.rag.search
         }

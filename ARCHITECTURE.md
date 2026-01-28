@@ -1,0 +1,72 @@
+# Architecture Guide
+
+This document provides a high-level overview of the RAG Agent Architecture.
+
+## 1. Project Structure
+
+The project follows a modular structure within the `src/` directory, with `main.py` serving as the entry point.
+
+```
+RAG agent/
+├── main.py                 # Entry point, Gradio UI, and orchestration
+├── src/
+│   ├── agent.py            # QwenAgent: Function calling loop & prompt construction
+│   ├── rag.py              # InvestmentRAG: Parent-Document Retrieval implementation
+│   ├── llm.py              # LlamaCpp model loading (CPU/GPU)
+│   ├── tools.py            # Tool definitions (Stock, Crypto, News, Math)
+│   ├── config.py           # Configuration constants (Paths, Keys)
+│   └── setup_mapping.py    # Utilities for stock symbol mapping
+├── data_investment/        # Directory for RAG input text files
+├── .rag_cache/             # Cache storage for RAG index and chunks
+└── requirements.txt        # Python dependencies
+```
+
+## 2. Core Components
+
+### 2.1. Agent (`src/agent.py`)
+- **Model**: Uses `Qwen/Qwen2.5-3B-Instruct` (or similar GGUF) via `llama-cpp-python`.
+- **Logic**: Implements a ReAct-style loop (Reasoning + Acting).
+- **Tool Parsing**:
+  - Primary: Checks for `<tool_call>...</tool_call>` XML tags.
+  - Fallback: Checks for JSON-like structures.
+- **Tools**: Arithmetic, Stock Price (yfinance), Crypto Price (Binance), News (Tavily), RAG Search.
+
+### 2.2. RAG System (`src/rag.py`)
+- **Strategy**: **Summary Vector (Parent-Document Retrieval)**.
+- **Mechanism**:
+  1. **Ingestion**: Documents are split into chunks. A summary is generated for the whole document (Parent).
+  2. **Indexing**: Only the **Parent Summary** is vectorized and stored in FAISS.
+  3. **Storage**: Detailed **Child Chunks** are stored in a key-value store (dictionary/pickle), NOT vectorized.
+  4. **Retrieval**:
+     - Query matches against Parent Summaries.
+     - Relevant Parent Documents are identified.
+     - **All** Child Chunks from those parents are retrieved.
+     - Chunks are re-ranked using a Cross-Encoder (`BAAI/bge-reranker-base`).
+     - Top chunks are returned.
+- **Caching**: Has rigorous caching mechanisms (hashing file contents) to avoid rebuilding the index unnecessarily.
+
+### 2.3. LLM Layer (`src/llm.py`)
+- **Engine**: `llama.cpp` (via `llama-cpp-python`).
+- **Hardware**:
+  - auto-detects CUDA (GPU) vs CPU.
+  - Sets `n_gpu_layers=-1` for full GPU offloading if CUDA is available.
+  - Configurable context window (default 8192).
+
+## 3. Data Flow
+
+1.  **User Query** -> `main.py` -> `QwenAgent.run()`
+2.  **Agent Loop**:
+    -   Agent generates thought/plan.
+    -   Agent outputs `<tool_call>`.
+    -   `QwenAgent` executes tool (e.g., `query_knowledge_base`).
+    -   **RAG Search**:
+        -   Query -> Embedding -> FAISS (Summary Index).
+        -   Parent Doc -> Child Chunks -> Cross-Encoder -> Top Context.
+    -   Tool Result -> Agent History.
+    -   Agent repeats or generates Final Answer.
+3.  **Response** -> Gradio UI.
+
+## 4. Key Design Decisions
+-   **GGUF Oriented**: Designed for local inference efficiency.
+-   **Parent-Document Retrieval**: optimized for "investment" contexts where understanding the whole document context (Summary) is often better for retrieval than matching isolated keywords in small chunks.
+-   **Gradio UI**: Provides a chat interface and a document upload tab for real-time RAG updates.
