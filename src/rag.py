@@ -182,7 +182,11 @@ Answer format:
         
         # Load models first (always needed for search)
         logger.info(f"Loading Embedding Model & Re-ranker (device={DEVICE}, name={DEVICE_NAME})...")
-        self.embed_model = SentenceTransformer("BAAI/bge-base-en-v1.5", device=DEVICE)
+        if DEVICE == "cuda":
+            import torch
+            self.embed_model = SentenceTransformer("BAAI/bge-base-en-v1.5", device=DEVICE, model_kwargs={"torch_dtype": torch.float16})
+        else:
+            self.embed_model = SentenceTransformer("BAAI/bge-base-en-v1.5", device=DEVICE)
         self.reranker = CrossEncoder("BAAI/bge-reranker-base", device=DEVICE)
         
         # Check cache validity
