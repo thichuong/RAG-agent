@@ -4,24 +4,27 @@ This repository hosts a modular Python application integrating advanced AI agent
 
 ## 🌟 Key Features
 
-### 🤖 Multi-Step Agent (`src/agent.py`)
+### 🤖 Multi-Step Agent (`src/agent/`)
 - **Model**: `Qwen/Qwen3-4B-Instruct-2507` (GGUF format).
+- **Architecture**: Modular design with separate `core`, `planner`, `parser`, and `summarizer` modules.
 - **Capabilities**:
   - **Tool Use**: Autonomous execution of tools for real-time data and calculations.
-  - **Contextual Memory**: Handles follow-up questions and maintains conversation history.
+  - **Planning**: Analyzes queries effectively to identify information gaps.
   - **Reasoning**: Breaks down complex queries into logical steps.
 
 ### 📚 Investment RAG (`src/rag.py`)
-- **Hybrid Search**: Combines **FAISS** (Dense Vector Search) and **BM25** (Sparse Keyword Search) for robust retrieval.
+- **Strategy**: **Summary Vector (Parent-Document Retrieval)**.
+- **Parent Indexing**: Vectorizes Document Summaries for high-level semantic matching.
+- **Child Retrieval**: Retrieves full document chunks associated with matched summaries.
 - **Re-ranking**: Uses `BAAI/bge-reranker-base` to refine search results.
-- **Contextual Retrieval**: Enhances chunks with document summaries for better context understanding.
-- **Smart Caching**: Caches embeddings and indices to speed up startup times.
+- **Smart Caching**: Caches embeddings and indices (FAISS) to speed up startup times.
 
-### 🛠️ Tools (`src/tools.py`)
-- `get_stock_price(symbol)`: Real-time stock/crypto data via `yfinance`.
-- `get_news(query)`: Latest news search via `Tavily` API.
-- `arithmetic_tool(op, a, b)`: Precise mathematical operations.
-- `query_knowledge_base(query)`: Access to internal investment documents.
+### 🛠️ Tools (`src/tools/`)
+Modular tools organized by domain:
+- **Finance**: `get_stock_price`, `get_crypto_price`, symbol resolution.
+- **Web**: `get_news` (Tavily), `crawl_url`, `scrape_web_page`.
+- **Math**: `arithmetic_tool`.
+- **RAG**: `query_knowledge_base`.
 
 ## 🚀 Getting Started
 
@@ -66,7 +69,7 @@ python main.py
 
 This will launch a **Gradio** web interface (local and public shareable link) where you can interact with the agent.
 
-## � Project Structure
+## 📂 Project Structure
 
 ```
 ├── main.py                 # Entry point
@@ -74,16 +77,23 @@ This will launch a **Gradio** web interface (local and public shareable link) wh
 ├── .env                    # API keys (not committed)
 ├── data_investment/        # Folder for RAG documents (.txt)
 └── src/
-    ├── agent.py            # QwenAgent logic & tool parsing
-    ├── rag.py              # InvestmentRAG system (FAISS + BM25)
+    ├── agent/              # QwenAgent Logic
+    │   ├── core.py         # Main Agent loop
+    │   ├── planner.py      # Query Analysis
+    │   └── ...
+    ├── tools/              # Tool Definitions
+    │   ├── finance.py      # Stock/Crypto
+    │   ├── web.py          # News/Crawling
+    │   └── ...
+    ├── rag.py              # InvestmentRAG system (Summary Vector)
     ├── llm.py              # Model loading (llama-cpp-python)
-    ├── tools.py            # Tool definitions (yfinance, tavily)
-    └── config.py           # Configuration & logging
+    ├── config.py           # Configuration & logging
+    └── setup_mapping.py    # Setup script
 ```
 
 ## 🛠️ Technologies
 - **Inference**: `llama-cpp-python` (GGUF)
-- **RAG**: `faiss-cpu`, `rank_bm25`, `sentence-transformers`
+- **RAG**: `faiss-cpu`, `sentence-transformers`, `langchain-text-splitters`
 - **Search & Data**: `yfinance`, `tavily-python`
 - **UI**: `gradio`
 
@@ -96,4 +106,3 @@ This project is dual-licensed under the MIT and Apache 2.0 licenses. You may use
 
 - [MIT License](LICENSE-MIT)
 - [Apache License, Version 2.0](LICENSE-APACHE)
-
