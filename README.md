@@ -89,3 +89,11 @@ This will launch a **Gradio** web interface (local and public shareable link) wh
 
 ---
 *Created for Advanced Agentic Coding experiments.*
+
+## 📜 License
+
+This project is dual-licensed under the MIT and Apache 2.0 licenses. You may use this code under the terms of either license.
+
+- [MIT License](LICENSE-MIT)
+- [Apache License, Version 2.0](LICENSE-APACHE)
+
