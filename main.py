@@ -48,12 +48,8 @@ def add_document_handler(files):
     
     # Save cache after adding documents
     try:
-        if rag_instance.summary_index is not None:
-            # Get embeddings for new summaries to save cache
-            summary_texts = [rag_instance.doc_summaries[doc_id] for doc_id in rag_instance.summary_doc_ids]
-            summary_embeddings = rag_instance.embed_model.encode(summary_texts)
-            rag_instance._save_cache(summary_embeddings)
-            results.append("\n💾 Cache saved successfully.")
+        rag_instance.save_cache()
+        results.append("\n💾 Cache saved successfully.")
     except Exception as e:
         results.append(f"\n⚠️ Warning: Failed to save cache - {e}")
     

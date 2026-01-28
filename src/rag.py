@@ -81,7 +81,7 @@ class InvestmentRAG:
         except Exception:
             return False
 
-    def _save_cache(self, summary_embeddings: np.ndarray):
+    def save_cache(self):
         """Save all RAG components to cache files."""
         os.makedirs(self._cache_dir, exist_ok=True)
         paths = self._get_cache_paths()
@@ -269,7 +269,7 @@ Answer format:
         self.summary_index.add(np.array(summary_embeddings).astype('float32'))
         
         # 4. Save cache
-        self._save_cache(summary_embeddings)
+        self.save_cache()
         
         total_chunks = sum(len(chunks) for chunks in self.doc_store.values())
         self.is_ready = True
