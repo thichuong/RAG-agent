@@ -17,7 +17,8 @@ RAG agent/
 │   │   │   ├── planning.py
 │   │   │   ├── generate.py
 │   │   │   ├── execute_tools.py
-│   │   │   └── synthesis.py
+│   │   │   ├── synthesis.py
+│   │   │   └── utils.py
 │   │   ├── state.py        # TypedDict State Definition
 │   │   ├── parser.py       # Tool call parsing
 │   │   └── summarizer.py   # Text summarization
@@ -44,9 +45,10 @@ RAG agent/
 - **Nodes (`src/agent/nodes/`)**:
   - **Intent** (`nodes/analyze_intent.py`): Analyzes user request for goal and language.
   - **Plan** (`nodes/planning.py`): Injects strategic hints for complex queries.
-  - **Generate** (`nodes/generate.py`): Calls LLM to produce response or tool calls.
+  - **Generate** (`nodes/generate.py`): **Pure Router/Searcher**. Decides whether to call tools or pass to synthesis. Does NOT generate final answers.
   - **Tools** (`nodes/execute_tools.py`): Executes requested tools and updates state with results.
   - **Synthesis** (`nodes/synthesis.py`): Final pass to consolidate tool outputs into a cohesive answer with citations.
+  - **Utils** (`nodes/utils.py`): Helper functions for message history filtering and context management.
 - **Parser (`src/agent/parser.py`)**: Handles extraction of `<tool_call>` XML tags.
 ### 2.2. Tools (`src/tools/`)
 Tools are modularized by domain:
@@ -80,7 +82,7 @@ Tools are modularized by domain:
 1.  **User Query** -> `main.py` -> `Graph Agent`.
 2.  **Intent Analysis Node**: Classifies intent (e.g., "market_data", "general_qa") and language.
 3.  **Planning Node**: Checks if a breakdown is needed (e.g., for multi-part comparison).
-4.  **Generation Node**: LLM receives State (Messages + Intent + Plan) -> Decides to call Tools.
+4.  **Generation Node**: LLM receives State (Filtered History + Plan) -> Decides to call Tools or delegate to Synthesis.
 5.  **Tools Node** (Conditional):
     -   Executes tools (`get_stock_price`, `get_news`, etc.).
     -   Updates State with Tool Outputs.

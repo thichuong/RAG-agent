@@ -100,8 +100,10 @@ class QwenAgent:
         if has_recent_tool_outputs:
             return "synthesis"
         
-        # 4. No tools used at all -> Direct answer
-        return "end"
+        # 4. No tools used at all -> Synthesis (to generate the final conversational response)
+        # Previously we went to "end", but now 'generate' only does tool calls.
+        # So we need synthesis to create the actual text response.
+        return "synthesis"
 
     def run(self, user_query: str, history: List[Dict] = []):
         """

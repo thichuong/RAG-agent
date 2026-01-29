@@ -10,7 +10,7 @@ This repository hosts a modular Python application integrating advanced AI agent
 - **Workflow**:
   - **Intent Analysis**: Determines the user's goal and required output language.
   - **Planning**: Strategies for complex queries.
-  - **Generation**: Produces tool calls or direct answers.
+  - **Generation**: Acts as a **Router/Searcher**, deciding strictly between calling tools or passing to synthesis (no direct answering).
   - **Tool Execution**: Handles safe execution of tools.
   - **Synthesis**: Compiles final answers from tool outputs with citations.
 
@@ -86,7 +86,8 @@ This will launch a **Gradio** web interface (local and public shareable link) wh
     │   │   ├── planning.py
     │   │   ├── generate.py
     │   │   ├── execute_tools.py
-    │   │   └── synthesis.py
+    │   │   ├── synthesis.py
+    │   │   └── utils.py
     │   ├── state.py        # Agent State definition
     │   └── ...
     ├── tools/              # Tool Definitions

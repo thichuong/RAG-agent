@@ -25,12 +25,21 @@ class SynthesisNode:
         
         synthesis_prompt = f"""SYSTEM: PREPARE FINAL ANSWER.
 1. Review the User Query: "{user_query}"
-2. Review ALL Tool Outputs above (especially Summaries of crawled pages).
-3. Synthesize a COMPREHENSIVE final response.
-4. CONSTRAINT: Use ONLY the information present in the tool outputs. Do not make up facts. verification_step=TRUE
-5. CITATIONS: You MUST include citations [Source: Name](URL) for all factual claims as per protocol.
+2. Review the Conversation History and Tool Outputs (if any).
 
-CONTEXT FROM INTENT ANALYSIS:
+### MODE SELECTION:
+**Scenario A: Tool Outputs are present (Research Mode)**
+- Synthesize a COMPREHENSIVE final response based *primarily* on the tool outputs.
+- **Listicle Format**: For news/lists, use a structured list (3-5 items).
+- **Deep Dive**: For detailed topics, synthesize a cohesive report.
+- **Constraint**: Use ONLY the information present in the tool outputs. Do not make up facts. 
+- **CITATIONS (STRICT)**: You MUST include citations [Source: Name](URL) for all factual claims.
+
+**Scenario B: No Tool Outputs (Conversational Mode)**
+- If no tools were called (e.g., greetings, philosophical questions, or general knowledge within your training), answer the user directly and helpfully.
+- Be polite and professional.
+
+### CONTEXT:
 - Goal: {intent_data.get('goal', 'Answer the question')}
 - Required Language: {intent_data.get('language', 'Vietnamese')}
 
