@@ -19,8 +19,6 @@ RAG agent/
 │   │   │   ├── execute_tools.py
 │   │   │   └── synthesis.py
 │   │   ├── state.py        # TypedDict State Definition
-│   │   ├── intent_analyzer.py # Intent extraction logic
-│   │   ├── planner.py      # Planning helper
 │   │   ├── parser.py       # Tool call parsing
 │   │   └── summarizer.py   # Text summarization
 │   ├── tools/              # Tool Definitions Package
@@ -44,7 +42,7 @@ RAG agent/
 - **Core (`src/agent/core.py`)**: Defines the graph topology (Nodes & Edges).
 - **Core (`src/agent/core.py`)**: Defines the graph topology (Nodes & Edges).
 - **Nodes (`src/agent/nodes/`)**:
-  - **Intent** (`nodes/analyze_intent.py`): Analyzes user request for goal and language using `intent_analyzer`.
+  - **Intent** (`nodes/analyze_intent.py`): Analyzes user request for goal and language.
   - **Plan** (`nodes/planning.py`): Injects strategic hints for complex queries.
   - **Generate** (`nodes/generate.py`): Calls LLM to produce response or tool calls.
   - **Tools** (`nodes/execute_tools.py`): Executes requested tools and updates state with results.

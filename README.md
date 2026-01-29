@@ -88,8 +88,6 @@ This will launch a **Gradio** web interface (local and public shareable link) wh
     │   │   ├── execute_tools.py
     │   │   └── synthesis.py
     │   ├── state.py        # Agent State definition
-    │   ├── intent_analyzer.py # Intent classification
-    │   ├── planner.py      # Planning Logic
     │   └── ...
     ├── tools/              # Tool Definitions
     │   ├── finance.py      # Stock/Crypto
