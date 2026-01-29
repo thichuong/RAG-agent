@@ -8,4 +8,5 @@ class AgentState(TypedDict):
     plan: str
     step_count: int
     tool_calls: List[Dict[str, Any]]
+    active_tools: List[str]
     final_answer: str

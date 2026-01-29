@@ -95,3 +95,11 @@ TOOLS_SCHEMA = [
         }
     }
 ]
+
+def get_tool_schemas() -> list:
+    """Return the list of tool schemas."""
+    return TOOLS_SCHEMA
+
+def get_all_tool_names() -> list:
+    """Return a list of all available tool names."""
+    return [t["function"]["name"] for t in TOOLS_SCHEMA]

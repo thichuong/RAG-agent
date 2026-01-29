@@ -15,6 +15,7 @@ from src.rag import InvestmentRAG
 from src.llm import load_model
 from src.agent import QwenAgent
 from src.setup_mapping import download_and_process_mappings
+from src.tools import get_all_tool_names
 
 
 # Global references (initialized in main)
@@ -116,10 +117,10 @@ def main():
     agent_instance = QwenAgent(llm_instance, rag_instance)
     
     # 4. Gradio Interface with Tabs
-    def chat_fn(message, history):
-        response, steps = agent_instance.run(message, history)
-        if steps:
-            return f"{response}\n\n<details><summary><b>🛠️ Execution Trace (Click to Expand)</b></summary>\n\n{steps}\n</details>"
+    def chat_fn(message, history, active_tools):
+        response, clusters = agent_instance.run(message, history, active_tools=active_tools)
+        if clusters:
+            return f"{response}\n\n<details><summary><b>🛠️ Execution Trace (Click to Expand)</b></summary>\n\n{clusters}\n</details>"
         return response
 
     with gr.Blocks(title="Qwen3 Agent + RAG") as demo:
@@ -139,6 +140,15 @@ def main():
                     submit_btn = gr.Button("Send", variant="primary")
                     clear_btn = gr.Button("Clear")
                 
+                with gr.Accordion("⚙️ Agent Configuration", open=False):
+                    all_tools = get_all_tool_names()
+                    tool_checkboxes = gr.CheckboxGroup(
+                        choices=all_tools,
+                        value=all_tools,
+                        label="Active Tools",
+                        info="Select which tools the agent is allowed to use."
+                    )
+                
                 gr.Examples(
                     examples=[
                         "What is Value at Risk?",
@@ -148,7 +158,7 @@ def main():
                     inputs=msg
                 )
                 
-                def respond(message, chat_history):
+                def respond(message, chat_history, active_tools):
                     chat_history = chat_history or []
                     # Convert messages format to tuple list for agent
                     history = []
@@ -162,13 +172,13 @@ def main():
                             content = str(item)
                         history.append((role, content))
                     
-                    response = chat_fn(message, history)
+                    response = chat_fn(message, history, active_tools)
                     chat_history.append({"role": "user", "content": message})
                     chat_history.append({"role": "assistant", "content": response})
                     return "", chat_history
                 
-                submit_btn.click(respond, [msg, chatbot], [msg, chatbot])
-                msg.submit(respond, [msg, chatbot], [msg, chatbot])
+                submit_btn.click(respond, [msg, chatbot, tool_checkboxes], [msg, chatbot])
+                msg.submit(respond, [msg, chatbot, tool_checkboxes], [msg, chatbot])
                 clear_btn.click(lambda: ("", []), outputs=[msg, chatbot])
             
             # Tab 2: Document Management

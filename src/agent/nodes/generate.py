@@ -15,9 +15,34 @@ class GenerateNode:
         messages = state.get("messages", [])
         intent_data = state.get("intent", {})
         plan = state.get("plan", "")
+        active_tools = state.get("active_tools")
+        
+        # Filter tools if active_tools is specified, otherwise use all
+        if active_tools:
+            current_tools_schema = [
+                tool for tool in TOOLS_SCHEMA 
+                if tool["function"]["name"] in active_tools
+            ]
+        else:
+            current_tools_schema = TOOLS_SCHEMA
         
         # Construct dynamic system prompt
-        tools_json = json.dumps(TOOLS_SCHEMA, indent=2)
+        tools_json = json.dumps(current_tools_schema, indent=2)
+        
+        # Build Few-Shot Examples based on active tools
+        stock_tool_active = False
+        if not active_tools: # None means all active
+            stock_tool_active = True
+        elif "get_stock_price" in active_tools:
+            stock_tool_active = True
+            
+        stock_example = ""
+        if stock_tool_active:
+            stock_example = """
+- Input: "What is the stock price of Apple?"
+- Output: <tool_call>{{"name": "get_stock_price", "arguments": {{"symbol": "AAPL"}} }}</tool_call>
+"""
+
         system_content = f"""You are a helpful and intelligent assistant. You can use tools to answer questions.
 If you need to use a tool, output the function call inside <tool_call> tags.
 Do NOT output the result of the tool, just the proper XML tag.
@@ -41,10 +66,7 @@ Available Tools:
 ### 3. FEW-SHOT EXAMPLES:
 - Input: "Hello!"
 - Output: 
-
-- Input: "What is the stock price of Apple?"
-- Output: <tool_call>{{"name": "get_stock_price", "arguments": {{"symbol": "AAPL"}} }}</tool_call>
-
+{stock_example}
 - Input: "who is the president of the US?" (If you know or no tool needed)
 - Output: 
 

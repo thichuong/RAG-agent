@@ -38,12 +38,18 @@ class ExecuteToolsNode:
             logger.info(f"Calling Tool: {func_name} with {args}")
             new_logs.append(f"🛠️ **Tool Call**: `{func_name}` | Args: `{args}`")
             
+            
             result = "Error: Tool not found."
+            active_tools = state.get("active_tools")
+            
             if func_name in self.tool_map:
-                try:
-                    result = self.tool_map[func_name](**args)
-                except Exception as e:
-                    result = f"Error executing {func_name}: {e}"
+                if active_tools is not None and func_name not in active_tools:
+                    result = f"Error: Tool '{func_name}' is not active for this session."
+                else:
+                    try:
+                        result = self.tool_map[func_name](**args)
+                    except Exception as e:
+                        result = f"Error executing {func_name}: {e}"
             
             # Special Handling for crawl_url to save context
             if func_name == "crawl_url" and isinstance(result, str) and not result.startswith("Error"):

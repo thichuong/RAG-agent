@@ -104,7 +104,7 @@ class QwenAgent:
         # So we need synthesis to create the actual text response.
         return "synthesis"
 
-    def run(self, user_query: str, history: List[Dict] = []):
+    def run(self, user_query: str, history: List[Dict] = [], active_tools: List[str] = None):
         """
         Run the agent workflow.
         """
@@ -130,6 +130,7 @@ class QwenAgent:
             "intent": {},
             "plan": "",
             "tool_calls": [],
+            "active_tools": active_tools,
         }
         
         # Invoke Graph
