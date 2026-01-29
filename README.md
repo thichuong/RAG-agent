@@ -81,7 +81,12 @@ This will launch a **Gradio** web interface (local and public shareable link) wh
 └── src/
     ├── agent/              # LangGraph Agent Logic
     │   ├── core.py         # Graph Definition & Compilation
-    │   ├── nodes.py        # Graph Nodes (Intent, Plan, Generate, Tools, Synthesis)
+    │   ├── nodes/          # Graph Node Implementations
+    │   │   ├── analyze_intent.py
+    │   │   ├── planning.py
+    │   │   ├── generate.py
+    │   │   ├── execute_tools.py
+    │   │   └── synthesis.py
     │   ├── state.py        # Agent State definition
     │   ├── intent_analyzer.py # Intent classification
     │   ├── planner.py      # Planning Logic

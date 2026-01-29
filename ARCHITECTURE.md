@@ -12,7 +12,12 @@ RAG agent/
 ├── src/
 │   ├── agent/              # Agent Logic Package
 │   │   ├── core.py         # Graph Setup & Compilation
-│   │   ├── nodes.py        # Graph Node Implementations
+│   │   ├── nodes/          # Graph Node Implementations
+│   │   │   ├── analyze_intent.py
+│   │   │   ├── planning.py
+│   │   │   ├── generate.py
+│   │   │   ├── execute_tools.py
+│   │   │   └── synthesis.py
 │   │   ├── state.py        # TypedDict State Definition
 │   │   ├── intent_analyzer.py # Intent extraction logic
 │   │   ├── planner.py      # Planning helper
@@ -37,12 +42,13 @@ RAG agent/
 - **Framework**: Built using **LangGraph** for structured, stateful execution.
 - **State (`src/agent/state.py`)**: Tracks conversation history, logs, intent, and plan.
 - **Core (`src/agent/core.py`)**: Defines the graph topology (Nodes & Edges).
-- **Nodes (`src/agent/nodes.py`)**:
-  - **Intent**: Analyzes user request for goal and language using `intent_analyzer`.
-  - **Plan**: Injects strategic hints for complex queries.
-  - **Generate**: Calls LLM to produce response or tool calls.
-  - **Tools**: Executes requested tools and updates state with results.
-  - **Synthesis**: Final pass to consolidate tool outputs into a cohesive answer with citations.
+- **Core (`src/agent/core.py`)**: Defines the graph topology (Nodes & Edges).
+- **Nodes (`src/agent/nodes/`)**:
+  - **Intent** (`nodes/analyze_intent.py`): Analyzes user request for goal and language using `intent_analyzer`.
+  - **Plan** (`nodes/planning.py`): Injects strategic hints for complex queries.
+  - **Generate** (`nodes/generate.py`): Calls LLM to produce response or tool calls.
+  - **Tools** (`nodes/execute_tools.py`): Executes requested tools and updates state with results.
+  - **Synthesis** (`nodes/synthesis.py`): Final pass to consolidate tool outputs into a cohesive answer with citations.
 - **Parser (`src/agent/parser.py`)**: Handles extraction of `<tool_call>` XML tags.
 ### 2.2. Tools (`src/tools/`)
 Tools are modularized by domain:
