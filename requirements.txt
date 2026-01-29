@@ -11,3 +11,5 @@ numpy
 python-dotenv
 beautifulsoup4
 requests
+langgraph
+langchain

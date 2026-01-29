@@ -14,12 +14,12 @@ def summarize_text(llm, text: str) -> str:
     summary_prompt = f"""Summarize the following text into 3-4 distinct bullet points. Focus on facts, numbers, and key insights relevant to the topic.
     
 Text:
-{text[:3000]}
+{text[:8000]}
 """
     try:
         response = llm.create_chat_completion(
             messages=[{"role": "user", "content": summary_prompt}],
-            max_tokens=200,
+            max_tokens=300,
             temperature=0.1
         )
         return response["choices"][0]["message"]["content"].strip()

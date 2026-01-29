@@ -6,11 +6,13 @@ This repository hosts a modular Python application integrating advanced AI agent
 
 ### 🤖 Multi-Step Agent (`src/agent/`)
 - **Model**: `Qwen/Qwen3-4B-Instruct-2507` (GGUF format).
-- **Architecture**: Modular design with separate `core`, `planner`, `parser`, and `summarizer` modules.
-- **Capabilities**:
-  - **Tool Use**: Autonomous execution of tools for real-time data and calculations.
-  - **Planning**: Analyzes queries effectively to identify information gaps.
-  - **Reasoning**: Breaks down complex queries into logical steps.
+- **Architecture**: **Graph-based (LangGraph)**.
+- **Workflow**:
+  - **Intent Analysis**: Determines the user's goal and required output language.
+  - **Planning**: Strategies for complex queries.
+  - **Generation**: Produces tool calls or direct answers.
+  - **Tool Execution**: Handles safe execution of tools.
+  - **Synthesis**: Compiles final answers from tool outputs with citations.
 
 ### 📚 Investment RAG (`src/rag.py`)
 - **Strategy**: **Summary Vector (Parent-Document Retrieval)**.
@@ -77,9 +79,12 @@ This will launch a **Gradio** web interface (local and public shareable link) wh
 ├── .env                    # API keys (not committed)
 ├── data_investment/        # Folder for RAG documents (.txt)
 └── src/
-    ├── agent/              # QwenAgent Logic
-    │   ├── core.py         # Main Agent loop
-    │   ├── planner.py      # Query Analysis
+    ├── agent/              # LangGraph Agent Logic
+    │   ├── core.py         # Graph Definition & Compilation
+    │   ├── nodes.py        # Graph Nodes (Intent, Plan, Generate, Tools, Synthesis)
+    │   ├── state.py        # Agent State definition
+    │   ├── intent_analyzer.py # Intent classification
+    │   ├── planner.py      # Planning Logic
     │   └── ...
     ├── tools/              # Tool Definitions
     │   ├── finance.py      # Stock/Crypto

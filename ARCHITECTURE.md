@@ -11,10 +11,13 @@ RAG agent/
 ├── main.py                 # Entry point, Gradio UI, and orchestration
 ├── src/
 │   ├── agent/              # Agent Logic Package
-│   │   ├── core.py         # QwenAgent: Function calling loop & main orchestration
-│   │   ├── planner.py      # Query analysis & planning logic
-│   │   ├── parser.py       # Tool call parsing logic
-│   │   └── summarizer.py   # Text summarization for crawled content
+│   │   ├── core.py         # Graph Setup & Compilation
+│   │   ├── nodes.py        # Graph Node Implementations
+│   │   ├── state.py        # TypedDict State Definition
+│   │   ├── intent_analyzer.py # Intent extraction logic
+│   │   ├── planner.py      # Planning helper
+│   │   ├── parser.py       # Tool call parsing
+│   │   └── summarizer.py   # Text summarization
 │   ├── tools/              # Tool Definitions Package
 │   │   ├── finance.py      # Stock (yfinance) & Crypto (Binance) tools
 │   │   ├── web.py          # News (Tavily), Crawling, Scraping tools
@@ -31,15 +34,16 @@ RAG agent/
 ## 2. Core Components
 
 ### 2.1. Agent (`src/agent/`)
-- **Model**: Uses `Qwen/Qwen2.5-3B-Instruct` (or similar GGUF) via `llama-cpp-python`.
-- **Logic**: Implements a ReAct-style loop (Reasoning + Acting).
-- **Planner (`src/agent/planner.py`)**: Analyzes user requests to identify information gaps and propose search strategies ("Paranoid Query Analyzer").
-- **Core (`src/agent/core.py`)**: Manages the agent loop, history, and integration with tools.
-- **Parser (`src/agent/parser.py`)**: 
-  - Primary: Checks for `<tool_call>...</tool_call>` XML tags.
-  - Fallback: Checks for JSON-like structures.
-- **Summarizer (`src/agent/summarizer.py`)**: Summarizes large text blocks from web crawling to manage context window.
-
+- **Framework**: Built using **LangGraph** for structured, stateful execution.
+- **State (`src/agent/state.py`)**: Tracks conversation history, logs, intent, and plan.
+- **Core (`src/agent/core.py`)**: Defines the graph topology (Nodes & Edges).
+- **Nodes (`src/agent/nodes.py`)**:
+  - **Intent**: Analyzes user request for goal and language using `intent_analyzer`.
+  - **Plan**: Injects strategic hints for complex queries.
+  - **Generate**: Calls LLM to produce response or tool calls.
+  - **Tools**: Executes requested tools and updates state with results.
+  - **Synthesis**: Final pass to consolidate tool outputs into a cohesive answer with citations.
+- **Parser (`src/agent/parser.py`)**: Handles extraction of `<tool_call>` XML tags.
 ### 2.2. Tools (`src/tools/`)
 Tools are modularized by domain:
 - **Finance**: Stock Price (yfinance), Crypto Price (Binance).
@@ -69,19 +73,18 @@ Tools are modularized by domain:
   - Configurable context window (default 8192+).
 
 ## 3. Data Flow
-
-1.  **User Query** -> `main.py` -> `QwenAgent.run()`
-2.  **Planning**: `planner.analyze_request()` injects search strategy if needed.
-3.  **Agent Loop** (`src/agent/core.py`):
-    -   Agent generates thought/plan.
-    -   Agent outputs `<tool_call>`.
-    -   `parser.parse_tool_calls()` extracts instructions.
-    -   `QwenAgent` executes tool (e.g., `query_knowledge_base`, `get_stock_price`).
-    -   **RAG Search**: Query -> Embedding -> FAISS (Summary Index) -> Re-ranking.
-    -   **Web/Crawler**: Tool gets content -> `summarizer.summarize_text()` condenses it.
-    -   Tool Result -> Agent History.
-    -   Agent repeats or generates Final Answer.
-4.  **Response** -> Gradio UI.
+1.  **User Query** -> `main.py` -> `Graph Agent`.
+2.  **Intent Analysis Node**: Classifies intent (e.g., "market_data", "general_qa") and language.
+3.  **Planning Node**: Checks if a breakdown is needed (e.g., for multi-part comparison).
+4.  **Generation Node**: LLM receives State (Messages + Intent + Plan) -> Decides to call Tools.
+5.  **Tools Node** (Conditional):
+    -   Executes tools (`get_stock_price`, `get_news`, etc.).
+    -   Updates State with Tool Outputs.
+    -   *Logic loops back to Generation or proceeds to Synthesis*.
+6.  **Synthesis Node**:
+    -   Takes all history + Tool Outputs.
+    -   Generates Final Answer with citations.
+7.  **Response** -> Gradio UI.
 
 ## 4. Key Design Decisions
 -   **Modular Architecture**: Tools and Agent logic are split into sub-packages for easier maintenance and testing.

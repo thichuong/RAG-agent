@@ -28,7 +28,7 @@ def load_model():
             # n_threads_batch=6,
             n_gpu_layers=-1,      # QUAN TRỌNG NHẤT: -1 nghĩa là đẩy HẾT model lên GPU
             n_batch=512,          # Tăng khả năng xử lý song song
-            verbose=True,
+            verbose=False,
         )
         logger.info("Qwen3 GGUF Model loaded successfully.")
         return llm
