@@ -4,6 +4,7 @@ from ..state import AgentState
 from ..parser import parse_tool_calls
 from ...config import logger
 from ...tools import TOOLS_SCHEMA
+from .utils import get_history_for_generation
 
 class GenerateNode:
     def __init__(self, llm):
@@ -57,11 +58,9 @@ Available Tools:
              prompt_messages.append({"role": "system", "content": plan})
 
         # Add history
-        # Simplify: just append all valid history messages
-        # Note: state['messages'] accumulates everything. 
-        # We need to filter/format for LlamaCPP if needed, or just pass them if format matches.
-        # The state['messages'] are defined as List[Dict[str, str]].
-        prompt_messages.extend(messages)
+        # Use filtered history: Clean past + Full current turn
+        filtered_messages = get_history_for_generation(messages)
+        prompt_messages.extend(filtered_messages)
 
         logger.info(f"Step {state.get('step_count', 0) + 1}: Generating response...")
         

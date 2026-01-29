@@ -1,25 +1,43 @@
-from typing import Dict, TYPE_CHECKING
+from typing import Dict, List, TYPE_CHECKING
 from ..state import AgentState
 from ...config import logger
+from .utils import get_clean_history
 
 if TYPE_CHECKING:
     from llama_cpp import Llama
 
-def analyze_request(llm, query: str) -> str:
+def analyze_request(llm, messages: List[Dict]) -> str:
     """
-    Analyze the user query to identify information gaps.
+    Analyze the user query to identify information gaps, considering conversation history.
     Returns a planning hint or empty string.
     """
+    if not messages:
+        return ""
+
+    query = messages[-1]["content"] if messages else ""
+    
+    # Format history
+    history_text = ""
+    clean_msgs = get_clean_history(messages[:-1])
+    for m in clean_msgs[-10:]:
+        role = m.get("role", "unknown")
+        content = m.get("content", "")
+        history_text += f"{role.upper()}: {content}\n"
+
     analysis_prompt = f"""You are a paranoid Query Analyzer. Assume you know NOTHING about the world after 2023.
 Your goal is to break down the user query into specific search needs.
 
-User Query: "{query}"
+Conversation History:
+{history_text}
+
+Current User Query: "{query}"
 
 Instructions:
 1. Identify specific keywords or named entities.
 2. If multiple topics are involved (e.g., comparisons), break them down into separate lines.
-3. Output "NEED_SEARCH: [Topic]" for EACH distinct topic needing information.
-4. Output "NO_SEARCH" only if the query is trivial chit-chat.
+3. If the query refers to previous messages (e.g. "what about him?"), resolve the entity from history.
+4. Output "NEED_SEARCH: [Topic]" for EACH distinct topic needing information.
+5. Output "NO_SEARCH" only if the query is trivial chit-chat or you are absolutely sure you have the answer in history/context.
 
 Examples:
 Query: "Compare Apple and Tesla"
@@ -40,7 +58,7 @@ NEED_SEARCH: <topic 2>
     try:
         response = llm.create_chat_completion(
             messages=[{"role": "user", "content": analysis_prompt}],
-            max_tokens=100, # Increased for multi-line
+            max_tokens=150, # Increased for multi-line
             temperature=0.0
         )
         content = response["choices"][0]["message"]["content"].strip()
@@ -69,16 +87,10 @@ class PlanningNode:
     def __call__(self, state: AgentState) -> Dict:
         """Node to create a plan."""
         messages = state.get("messages", [])
-        user_query = ""
-        for m in reversed(messages):
-            if m["role"] == "user":
-                user_query = m["content"]
-                break
-            
-        if not user_query:
+        if not messages:
             return {}
 
-        planning_hint = analyze_request(self.llm, user_query)
+        planning_hint = analyze_request(self.llm, messages)
         if planning_hint:
             logger.info(f"💡 Injecting Plan: {planning_hint}")
             return {"plan": planning_hint}

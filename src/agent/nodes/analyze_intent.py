@@ -1,11 +1,13 @@
 import json
-from typing import Dict
+from typing import Dict, List
 from ..state import AgentState
 from ...config import logger
+from .utils import get_clean_history
 
-def analyze_intent(llm, query: str) -> dict:
+def analyze_intent(llm, messages: List[Dict]) -> dict:
     """
-    Analyzes the user's query to extract the underlying goal and the expected language.
+    Analyzes the user's query to extract the underlying goal and the expected language,
+    considering the conversation history.
     
     Returns:
         dict: {
@@ -13,10 +15,32 @@ def analyze_intent(llm, query: str) -> dict:
             "language": "The language (e.g., Vietnamese, English)"
         }
     """
+    if not messages:
+        return {"goal": "", "language": "English"}
+
+    # Extract current query (last user message)
+    # Ideally the last message is the user's new input
+    query = messages[-1]["content"] if messages else ""
     
+    # Format history
+    history_text = ""
+    # Use clean history (user questions & final answers only)
+    clean_msgs = get_clean_history(messages[:-1])
+    # Limit to last 10 relevant messages
+    for m in clean_msgs[-10:]:
+        role = m.get("role", "unknown")
+        content = m.get("content", "")
+        history_text += f"{role.upper()}: {content}\n"
+
     prompt = f"""You are an advanced Intent Classifier.
-Analyze the following User Query and extract:
-1. The **Goal** (What does the user really want? Be specific.)
+
+Conversation History:
+{history_text}
+
+Current User Query: "{query}"
+
+Analyze the Current User Query in the context of the History (if any) and extract:
+1. The **Goal** (What does the user really want? Be specific. If they ask a follow-up question like "and him?", use history to resolve who "he" is.)
 2. The **Language** (What language is the user using or expecting?)
 
 Output JSON ONLY in this format:
@@ -24,14 +48,12 @@ Output JSON ONLY in this format:
   "goal": "...",
   "language": "..."
 }}
-
-User Query: "{query}"
 """
 
     try:
         response = llm.create_chat_completion(
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=150,
+            max_tokens=200,
             temperature=0.1
         )
         content = response["choices"][0]["message"]["content"].strip()
@@ -57,25 +79,13 @@ class AnalyzeIntentNode:
 
     def __call__(self, state: AgentState) -> Dict:
         """Node to analyze user intent."""
-        # Get the first user message (assuming it's the last one added before this starts or the first one)
-        # In a persistent chat, we might want the latest user message.
-        # Check if messages exist
+        # Get the messages
         messages = state.get("messages", [])
         if not messages:
             return {}
         
-        # Find latest user message
-        user_query = ""
-        for m in reversed(messages):
-            if m["role"] == "user":
-                user_query = m["content"]
-                break
-        
-        if not user_query:
-            return {}
-
-        logger.info("🧠 Analyzing Intent...")
-        intent_data = analyze_intent(self.llm, user_query)
+        logger.info("🧠 Analyzing Intent with History...")
+        intent_data = analyze_intent(self.llm, messages)
         logger.info(f"🎯 Intent Detected: {intent_data}")
         
         return {"intent": intent_data}
