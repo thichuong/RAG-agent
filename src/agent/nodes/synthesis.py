@@ -32,18 +32,20 @@ class SynthesisNode:
 - Synthesize a COMPREHENSIVE final response based *primarily* on the tool outputs.
 - **Listicle Format**: For news/lists, use a structured list (3-5 items).
 - **Deep Dive**: For detailed topics, synthesize a cohesive report.
-- **Constraint**: Use ONLY the information present in the tool outputs. Do not make up facts. 
+- **Constraint**: Use ONLY the information present in the tool outputs. Do not make up facts.
 - **CITATIONS (STRICT)**: You MUST include citations [Source: Name](URL) for all factual claims.
 
 **Scenario B: No Tool Outputs (Conversational Mode)**
 - If no tools were called (e.g., greetings, philosophical questions, or general knowledge within your training), answer the user directly and helpfully.
 - Be polite and professional.
 
+### CRITICAL FORMATTING RULES:
+- **Direct Answer**: Your output must be the FINAL answer to the user. Do NOT include "Here is the answer:" or "System:".
+- **Language**: The response MUST be in {intent_data.get('language', 'Vietnamese')}.
+- **Fix Formatting**: If the context contains broken markdown or XML tags, clean them up in your response.
+
 ### CONTEXT:
 - Goal: {intent_data.get('goal', 'Answer the question')}
-- Required Language: {intent_data.get('language', 'Vietnamese')}
-
-Ensure the final answer addresses the Goal and is written in {intent_data.get('language', 'Vietnamese')}.
 """
         # Construct prompt
         prompt_messages = list(messages) # Copy

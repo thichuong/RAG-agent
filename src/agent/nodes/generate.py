@@ -38,7 +38,17 @@ Available Tools:
     - If NO tools needed: (Empty response or just whitespace) - The system will automatically route to the Synthesis step to generate the answer.
     - Do NOT write: "I can answer this..." or "Hello...". Leave that to the Synthesis step.
 
-### 3. KNOWLEDGE BASE:
+### 3. FEW-SHOT EXAMPLES:
+- Input: "Hello!"
+- Output: 
+
+- Input: "What is the stock price of Apple?"
+- Output: <tool_call>{{"name": "get_stock_price", "arguments": {{"symbol": "AAPL"}} }}</tool_call>
+
+- Input: "who is the president of the US?" (If you know or no tool needed)
+- Output: 
+
+### 4. KNOWLEDGE BASE:
 - For general investment concepts, ALWAYS search the knowledge base first using <tool_call>{{"name": "query_knowledge_base", "arguments": {{ "query": "your question" }} }}</tool_call>.
 """
         

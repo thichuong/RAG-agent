@@ -48,8 +48,7 @@ class QwenAgent:
             self.should_continue,
             {
                 "execute_tools": "execute_tools",
-                "synthesis": "synthesis",
-                "end": END
+                "synthesis": "synthesis"
             }
         )
         
