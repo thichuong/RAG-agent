@@ -79,6 +79,7 @@ This will launch a **Gradio** web interface (local and public shareable link) wh
 ├── .env                    # API keys (not committed)
 ├── data_investment/        # Folder for RAG documents (.txt)
 └── src/
+    ├── ui.py               # Gradio UI Implementation
     ├── agent/              # LangGraph Agent Logic
     │   ├── core.py         # Graph Definition & Compilation
     │   ├── nodes/          # Graph Node Implementations
@@ -104,7 +105,7 @@ This will launch a **Gradio** web interface (local and public shareable link) wh
 - **Inference**: `llama-cpp-python` (GGUF)
 - **RAG**: `faiss-cpu`, `sentence-transformers`, `langchain-text-splitters`
 - **Search & Data**: `yfinance`, `tavily-python`
-- **UI**: `gradio`
+- **UI**: `gradio` (Polished Interface: Soft Theme, Tabs, Sidebar)
 
 ---
 *Created for Advanced Agentic Coding experiments.*

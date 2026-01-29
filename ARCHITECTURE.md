@@ -8,8 +8,9 @@ The project follows a modular structure within the `src/` directory, with `main.
 
 ```
 RAG agent/
-├── main.py                 # Entry point, Gradio UI, and orchestration
+├── main.py                 # Entry point
 ├── src/
+│   ├── ui.py               # Gradio UI Implementation
 │   ├── agent/              # Agent Logic Package
 │   │   ├── core.py         # Graph Setup & Compilation
 │   │   ├── nodes/          # Graph Node Implementations
@@ -96,4 +97,4 @@ Tools are modularized by domain:
 -   **Modular Architecture**: Tools and Agent logic are split into sub-packages for easier maintenance and testing.
 -   **GGUF Oriented**: Designed for local inference efficiency.
 -   **Parent-Document Retrieval**: optimized for "investment" contexts where understanding the whole document context (Summary) is often better for retrieval than matching isolated keywords in small chunks.
--   **Gradio UI**: Provides a chat interface and a document upload tab for real-time RAG updates.
+-   **Gradio UI (`src/ui.py`)**: Dedicated UI module with a modern design (Soft theme, Tabs) for chat and document management.
